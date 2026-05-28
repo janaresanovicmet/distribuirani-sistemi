@@ -1,0 +1,28 @@
+import time
+
+
+def performance_interceptor(func):
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+
+        result = func(*args, **kwargs)
+
+        end_time = time.time()
+        execution_time = end_time - start_time
+
+        print(f"Funkcija '{func.__name__}' se izvršavala {execution_time:.6f} sekundi")
+
+        return result
+
+    return wrapper
+
+
+@performance_interceptor
+def test_function():
+    print("Funkcija počinje sa radom...")
+    time.sleep(2)
+    print("Funkcija je završila rad.")
+
+
+test_function()
+
