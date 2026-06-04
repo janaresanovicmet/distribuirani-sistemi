@@ -10,18 +10,19 @@ def start_client():
     client_socket.connect((HOST, PORT))
 
     print("Povezani ste na server.")
-    print("Unesite log poruke. Za kraj unesite 'exit'.")
+    print("Unosite poruke. Za kraj unesite: end")
 
     while True:
-        message = input("Log poruka: ")
+        poruka = input("Unesite poruku: ")
 
-        client_socket.send(message.encode("utf-8"))
+        client_socket.send(poruka.encode("utf-8"))
 
-        if message.lower() == "exit":
+        if poruka.lower() == "end":
+            print("Kraj komunikacije.")
             break
 
-        response = client_socket.recv(1024).decode("utf-8")
-        print("Server:", response)
+        odgovor = client_socket.recv(1024).decode("utf-8")
+        print("Server:", odgovor)
 
     client_socket.close()
 

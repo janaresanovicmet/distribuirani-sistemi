@@ -1,65 +1,48 @@
 import socket
-import threading
-from datetime import datetime
 
 HOST = "127.0.0.1"
 PORT = 5000
 
-# Lock koristimo da više niti ne piše u fajl u istom trenutku
-file_lock = threading.Lock()
 
-
-def handle_client(client_socket, client_address):
-    print(f"[NOVA KONEKCIJA] Klijent povezan: {client_address}")
-
-    try:
-        while True:
-            message = client_socket.recv(1024).decode("utf-8")
-
-            if not message:
-                break
-
-            if message.lower() == "exit":
-                print(f"[KRAJ] Klijent {client_address} je prekinuo konekciju.")
-                break
-
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            log_message = f"[{timestamp}] {client_address}: {message}"
-
-            print(log_message)
-
-            with file_lock:
-                with open("logs.txt", "a", encoding="utf-8") as file:
-                    file.write(log_message + "\n")
-
-            client_socket.send("Poruka je uspešno zabeležena.".encode("utf-8"))
-
-    except ConnectionResetError:
-        print(f"[GREŠKA] Klijent {client_address} je nasilno prekinuo konekciju.")
-
-    finally:
-        client_socket.close()
+def obrni_redosled_reci(poruka):
+    reci = poruka.split(" ")
+    reci.reverse()
+    return " ".join(reci)
 
 
 def start_server():
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     server_socket.bind((HOST, PORT))
-    server_socket.listen()
+    server_socket.listen(1)
 
-    print(f"[SERVER POKRENUT] Server sluša na {HOST}:{PORT}")
+    print(f"Server je pokrenut na {HOST}:{PORT}")
+    print("Čekam klijenta...")
+
+    client_socket, client_address = server_socket.accept()
+    print(f"Klijent se povezao: {client_address}")
 
     while True:
-        client_socket, client_address = server_socket.accept()
+        poruka = client_socket.recv(1024).decode("utf-8")
 
-        client_thread = threading.Thread(
-            target=handle_client,
-            args=(client_socket, client_address)
-        )
+        if not poruka:
+            break
 
-        client_thread.start()
+        print("Klijent:", poruka)
 
-        print(f"[AKTIVNE NITI] {threading.active_count() - 1}")
+        with open("client_log.txt", "a", encoding="utf-8") as file:
+            file.write(poruka + "\n")
+
+        if poruka.lower() == "end":
+            print("Klijent je poslao end. Završavam server.")
+            break
+
+        odgovor = obrni_redosled_reci(poruka)
+
+        client_socket.send(odgovor.encode("utf-8"))
+
+    client_socket.close()
+    server_socket.close()
 
 
 start_server()
